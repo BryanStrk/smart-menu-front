@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from './api-client';
 import { ItemCarrito } from '../state/pedido.store';
+import { endpoints } from '../config/endpoints';
 
 /**
  * Interfaz que define la estructura para registrar una nueva comanda.
@@ -57,7 +58,7 @@ export class PedidoService {
    * @endpoint POST /pedido
    */
   crearPedido(pedido: NuevoPedido): Observable<any> {
-    return this.api.post('/pedido', pedido);
+    return this.api.post(endpoints.orders.create, pedido);
   }
 
   /**
