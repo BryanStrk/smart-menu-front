@@ -43,45 +43,29 @@ export interface PedidoBackend {
  * Se encarga de la visualización global y el control de estados
  * de los pedidos.
  */
+
 @Injectable({ providedIn: 'root' })
 export class PedidoService {
-  /**
-   *
-   * @param api Cliente de comunicación centralizado {@link ApiClient}
-   */
   constructor(private api: ApiClient) {}
 
-  /**
-   * Registra un nuevo pedido en el sistema.
-   * @param pedido Objeto con la información de la comanda.
-   * @returns Observable con la respuesta del servidor.
-   * @endpoint POST /pedido
-   */
   crearPedido(pedido: NuevoPedido): Observable<any> {
+    // Asegúrate de que endpoints.orders.create sea igual a lo que espera Java
     return this.api.post(endpoints.orders.create, pedido);
   }
 
-  /**
-   * Recupera el listado completo de pedidos para el
-   * monitor de cocina//barra.
-   * @returns Un flujo de datos con todos los pedidos
-   * en formato {@link PedidoBackend}
-   * @endpoint GET /pedido
-   */
   obtenerPedidos(): Observable<PedidoBackend[]> {
-    return this.api.get<PedidoBackend[]>('/pedido');
-  }
-
-  /**
-   * Actualiza un pedido existente.
-   * @param pedido El objeto completo del pedido con las modificaciones.
-   * @returns PUT /pedido/
-   */
-  actualizarPedido(pedido: PedidoBackend): Observable<any> {
-    return this.api.put('/pedido/', pedido);
+    return this.api.get<PedidoBackend[]>(endpoints.orders.list);
   }
 
   actualizarEstadoPedido(id: string, nuevoEstado: string): Observable<any> {
-    return this.api.put(`/pedido/${id}/estado`, { estadoPedido: nuevoEstado });
+    const cleanId = typeof id === 'object' ? (id as any).id || (id as any)._id : id;
+
+    const url = `${endpoints.orders.list}/${cleanId}/estado`;
+    const body = { estado: nuevoEstado };
+    return this.api.patch(url, body);
+  }
+
+  obtenerSugerenciasInteligentes(): Observable<string[]> {
+    return this.api.get<string[]>(`${endpoints.orders.list}/recomendaciones`);
   }
 }

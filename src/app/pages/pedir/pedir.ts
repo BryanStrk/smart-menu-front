@@ -163,8 +163,8 @@ export class Pedir implements OnInit, OnDestroy {
     this.enviando = true;
 
     const idComanda = 'cmd-' + Date.now();
-    const cuerpo: NuevoPedido & { id: string } = {
-      id: idComanda,
+
+    const cuerpo: NuevoPedido = {
       estadoPedido: 'NUEVO',
       nota: this.nota || '',
       items: JSON.parse(JSON.stringify(productosNuevos)),
@@ -173,8 +173,8 @@ export class Pedir implements OnInit, OnDestroy {
       mesa: this.mesa,
     };
 
-    const finalizarEnvioLocal = () => {
-      this.pedidoStore.agregarAlHistorial(cuerpo);
+    const finalizarEnvioLocal = (idParaGuardar: string) => {
+      this.pedidoStore.agregarAlHistorial({ ...cuerpo, id: idParaGuardar });
       this.items.forEach((item) => {
         if (!item.enviado) item.enviado = true;
       });
@@ -193,10 +193,15 @@ export class Pedir implements OnInit, OnDestroy {
     };
 
     this.pedidoService.crearPedido(cuerpo).subscribe({
-      next: () => finalizarEnvioLocal(),
-      error: () => {
+      next: (pedidoCreado) => {
+        const idReal = pedidoCreado.id || pedidoCreado._id;
+        finalizarEnvioLocal(idReal);
+      },
+
+      error: (err) => {
         console.warn('Usando modo local por falta de conexión.');
-        finalizarEnvioLocal();
+        const idTemporal = 'cmd-' + Date.now();
+        finalizarEnvioLocal(idTemporal);
       },
     });
   }
