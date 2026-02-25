@@ -4,6 +4,7 @@
   background: var(--bg);
   min-height: 100dvh;
   color: var(--text);
+  z-index: 2000;
 }
 
 /* BOTÓN LOGOUT (top-actions) */
@@ -270,4 +271,111 @@
   padding: 2px 8px;
   border-radius: 6px;
   width: fit-content;
+}
+
+/* Banner de aviso de la IA */
+.ia-banner {
+  background: linear-gradient(90deg, rgba(214, 177, 94, 0.15), rgba(15, 17, 21, 0.9));
+  border: 1px solid rgba(214, 177, 94, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  animation: fadeInDown 0.5s ease-out;
+}
+
+.ia-banner p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.ia-banner strong {
+  color: var(--accent);
+}
+
+.btn-ver-todo {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ver-todo:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsivo: En tablets o PC, el banner es horizontal */
+@media (min-width: 600px) {
+  .ia-banner {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+
+.ia-banner {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-left: 5px solid #2196f3;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeInDown 0.5s ease-out;
+}
+
+.ia-banner p {
+  margin: 0;
+  color: #0d47a1;
+  font-size: 0.95rem;
+}
+
+.btn-ver-todo {
+  background: #2196f3;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.btn-ver-todo:hover {
+  transform: scale(1.05);
+  background: #1976d2;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
