@@ -43,57 +43,63 @@ export class Barra implements OnInit {
   /**
    * Normaliza los IDs de MongoDB (_id o id) a string.
    */
-  private normalizarId(raw: any): string {
-    if (!raw) return '';
+private normalizarId(raw: any): string {
+  if (!raw) return '';
 
-    // 1) ya viene string
-    if (typeof raw === 'string') return raw.trim();
-
-    // 2) { $oid: "..." }
-    if (raw.$oid) return String(raw.$oid).trim();
-
-    // 3) algunos serializadores: { id: "..." } o { _id: "..." }
-    if (raw.id) return String(raw.id).trim();
-    if (raw._id) return String(raw._id).trim();
-
-    // 4) Mongo "extended json": { "$numberLong": "..."} etc (raro)
-    if (raw.value) return String(raw.value).trim();
-
-    // 5) ObjectId "raw" (timestamp/date) -> NO podemos reconstruir hex fiable
-    // devolvemos vacío
-    return '';
+  // si ya viene string, intentamos extraer 24 hex
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    const m = s.match(/[a-fA-F0-9]{24}/);
+    return m ? m[0] : s;
   }
+
+  // formato típico Mongo Extended JSON
+  if (raw.$oid) return String(raw.$oid).trim();
+
+  // otros formatos comunes
+  if (raw.hexString) return String(raw.hexString).trim();
+  if (raw.id) return this.normalizarId(raw.id);
+  if (raw._id) return this.normalizarId(raw._id);
+
+  // último intento: convertir a string y sacar 24 hex
+  const s = String(raw);
+  const m = s.match(/[a-fA-F0-9]{24}/);
+  return m ? m[0] : '';
+}
 
   /**
    * Carga real desde el Backend.
    */
   cargarPedidos() {
-    this.cargando = true;
-    this.error = '';
+  this.cargando = true;
+  this.error = '';
 
-    this.pedidoService.obtenerPedidos().subscribe({
-      next: (resp: any[]) => {
+  this.pedidoService.obtenerPedidos().subscribe({
+    next: (resp: any[]) => {
+      console.log('[BARRA] resp[0] RAW', resp?.[0]);
+      console.log('[BARRA] resp RAW', resp);
 
-        this.pedidos = resp.map((p: any) => {
-          console.log('[BARRA] Pedido raw', p);
-          console.log('[BARRA] p.id =', p.id, 'p._id =', p._id);
-          // Intentamos capturar el ID de todas las formas posibles antes de mapear
-          const idFinal = this.normalizarId(p.id) || this.normalizarId(p._id);
 
-          return {
-            id: idFinal,
-            estado: (p.estado || 'RECIBIDO').toUpperCase(),
-            nota: p.nota ?? '',
-            lineasPedido: p.lineasPedido ?? [],
-            totalPedido: Number(p.totalPedido ?? 0),
-            fechaCreacion: p.fechaCreacion ?? '',
-            mesaId: p.mesaId ?? 'S/M',
-          };
-        });
-        this.cargando = false;
-      },
-    });
-  }
+      this.pedidos = (resp ?? []).map((p: any) => ({
+        id: this.normalizarId(p.id ?? p._id ?? p?._Id),
+        estado: p.estado ?? '',
+        nota: p.nota ?? '',
+        lineasPedido: p.lineasPedido ?? [],
+        totalPedido: Number(p.totalPedido ?? 0),
+        fechaCreacion: p.fechaCreacion ?? '',
+        mesaId: p.mesaId ?? '',
+      }));
+
+      console.log('[BARRA] vm[0]', this.pedidos?.[0]);
+
+      this.cargando = false;
+    },
+    error: (e) => {
+      console.error('[BARRA] error obtenerPedidos', e);
+      this.cargando = false;
+    }
+  });
+}
 
   /**
    * Actualiza el estado en el Backend y refresca la vista.
