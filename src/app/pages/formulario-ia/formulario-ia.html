@@ -15,7 +15,7 @@
         <p class="ia-subtitle">Introduce tus datos para una recomendación precisa</p>
       </header>
 
-      <!-- ✅ FORM REACTIVO -->
+      <!-- "" FORM REACTIVO -->
       <form [formGroup]="form" (ngSubmit)="enviarConsulta()">
         <div class="input-grid-row">
           <div class="field">
@@ -87,7 +87,7 @@
           </div>
         </div>
 
-        <!-- ✅ BOTÓN: se habilita cuando el form es válido -->
+        <!-- "" BOTÓN: se habilita cuando el form es válido -->
         <button class="btn-generate" type="submit" [disabled]="cargando() || form.invalid">
           {{ cargando() ? 'Analizando Perfil...' : 'Generar Sugerencias' }}
         </button>

@@ -97,7 +97,7 @@ export class Menu implements OnInit {
 const rawId =
   p.id?.$oid ||
   p._id?.$oid ||
-  p._id?.hexString ||     // ✅ CLAVE para ObjectId Java
+  p._id?.hexString ||     // "" CLAVE para ObjectId Java
   p.id?.hexString ||
   (typeof p.id === 'string' ? p.id : null) ||
   (typeof p._id === 'string' ? p._id : null) ||

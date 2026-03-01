@@ -131,7 +131,7 @@
   /* no se estira a pantalla completa */
   grid-template-columns: repeat(auto-fit, minmax(190px, 320px));
 
-  /* ✅ a la izquierda */
+  /* "" a la izquierda */
   justify-content: start;
   align-content: start;
 }
