@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { PedidoService } from '../../api/pedido-service';
 import { PedidoStore } from '../../state/pedido.store';
+import { interval, Subscription } from 'rxjs';
 
 /**
  * Estructura visual de un pedido para la interfaz de barra.
@@ -30,78 +31,85 @@ export class Barra implements OnInit {
   error = '';
   estadoSeleccionado: string = 'RECIBIDO';
   mensajeAccion = '';
+  private pollSub?: Subscription;
 
   constructor(
     private pedidoService: PedidoService,
     private pedidoStore: PedidoStore,
-  ) { }
+  ) {}
 
   ngOnInit() {
     console.log('barra iniciando');
     this.cargarPedidos();
+    this.pollSub = interval(5000).subscribe(() => {
+      this.cargarPedidos();
+    });
+  }
+
+  ngOnDestroy() {
+    this.pollSub?.unsubscribe();
   }
 
   /**
    * Normaliza los IDs de MongoDB (_id o id) a string.
    */
-private normalizarId(raw: any): string {
-  if (!raw) return '';
+  private normalizarId(raw: any): string {
+    if (!raw) return '';
 
-  // si ya viene string, intentamos extraer 24 hex
-  if (typeof raw === 'string') {
-    const s = raw.trim();
+    // si ya viene string, intentamos extraer 24 hex
+    if (typeof raw === 'string') {
+      const s = raw.trim();
+      const m = s.match(/[a-fA-F0-9]{24}/);
+      return m ? m[0] : s;
+    }
+
+    // formato típico Mongo Extended JSON
+    if (raw.$oid) return String(raw.$oid).trim();
+
+    // otros formatos comunes
+    if (raw.hexString) return String(raw.hexString).trim();
+    if (raw.id) return this.normalizarId(raw.id);
+    if (raw._id) return this.normalizarId(raw._id);
+
+    // último intento: convertir a string y sacar 24 hex
+    const s = String(raw);
     const m = s.match(/[a-fA-F0-9]{24}/);
-    return m ? m[0] : s;
+    return m ? m[0] : '';
   }
-
-  // formato típico Mongo Extended JSON
-  if (raw.$oid) return String(raw.$oid).trim();
-
-  // otros formatos comunes
-  if (raw.hexString) return String(raw.hexString).trim();
-  if (raw.id) return this.normalizarId(raw.id);
-  if (raw._id) return this.normalizarId(raw._id);
-
-  // último intento: convertir a string y sacar 24 hex
-  const s = String(raw);
-  const m = s.match(/[a-fA-F0-9]{24}/);
-  return m ? m[0] : '';
-}
 
   /**
    * Carga real desde el Backend.
    */
   cargarPedidos() {
-  this.cargando = true;
-  this.error = '';
+    this.cargando = true;
+    this.error = '';
 
-  this.pedidoService.obtenerPedidos().subscribe({
-    next: (resp: any[]) => {
-      console.log('[BARRA] resp[0] RAW', resp?.[0]);
-      console.log('[BARRA] resp RAW', resp);
+    this.pedidoService.obtenerPedidos().subscribe({
+      next: (resp: any[]) => {
+        console.log('[BARRA] resp[0] RAW', resp?.[0]);
+        console.log('[BARRA] resp RAW', resp);
 
+        this.pedidos = (resp ?? []).map((p: any) => ({
+          id: this.normalizarId(p.id ?? p._id ?? p?._Id),
+          estado: p.estado && p.estado !== 'null' ? p.estado : 'RECIBIDO',
+          codigo: p.codigo ?? '',
+          nota: p.nota ?? '',
+          lineasPedido: p.lineasPedido ?? [],
+          totalPedido: Number(p.totalPedido ?? 0),
+          fechaCreacion: p.fechaCreacion ?? '',
+          mesaId: p.mesaId ?? '',
+        }));
 
-      this.pedidos = (resp ?? []).map((p: any) => ({
-        id: this.normalizarId(p.id ?? p._id ?? p?._Id),
-        estado: p.estado ?? '',
-        codigo: p.codigo ?? '',
-        nota: p.nota ?? '',
-        lineasPedido: p.lineasPedido ?? [],
-        totalPedido: Number(p.totalPedido ?? 0),
-        fechaCreacion: p.fechaCreacion ?? '',
-        mesaId: p.mesaId ?? '',
-      }));
+        console.log('[BARRA] vm[0]', this.pedidos?.[0]);
 
-      console.log('[BARRA] vm[0]', this.pedidos?.[0]);
-
-      this.cargando = false;
-    },
-    error: (e) => {
-      console.error('[BARRA] error obtenerPedidos', e);
-      this.cargando = false;
-    }
-  });
-}
+        this.cargando = false;
+      },
+      error: (e) => {
+        console.error('[BARRA] error obtenerPedidos', e);
+        this.cargando = false;
+      },
+    });
+  }
 
   /**
    * Actualiza el estado en el Backend y refresca la vista.
@@ -157,11 +165,11 @@ private normalizarId(raw: any): string {
    * Lógica de filtrado y visualización
    */
   pedidosFiltrados() {
-    return this.pedidos.filter(p => p.estado === this.estadoSeleccionado);
+    return this.pedidos.filter((p) => p.estado === this.estadoSeleccionado);
   }
 
   getMesasEnEstado(estado: string) {
-    return [...new Set(this.pedidos.filter(p => p.estado === estado).map(p => p.mesaId))];
+    return [...new Set(this.pedidos.filter((p) => p.estado === estado).map((p) => p.mesaId))];
   }
 
   getPedidosDeMesaEnEstado(mesa: string, estado: string): PedidoVM[] {
@@ -170,9 +178,7 @@ private normalizarId(raw: any): string {
 
   actualizarEstadoMesaCompleta(mesa: string, nuevoEstado: string) {
     // Buscamos los pedidos de esa mesa que NO están en el nuevo estado todavía
-    const pedidosMesa = this.pedidos.filter(
-      (p) => p.mesaId === mesa && p.estado !== nuevoEstado,
-    );
+    const pedidosMesa = this.pedidos.filter((p) => p.mesaId === mesa && p.estado !== nuevoEstado);
     pedidosMesa.forEach((p) => this.actualizarEstado(p, nuevoEstado));
   }
 
