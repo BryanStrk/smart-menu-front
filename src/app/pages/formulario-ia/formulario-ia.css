@@ -207,7 +207,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
+  column-gap: 20px;
+  padding: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 0.9rem;
 }
@@ -222,6 +223,6 @@
 }
 
 .plato-kcal {
-  color: #fdbb2d; /* Un color amarillento para resaltar la energía */
+  color: #fdbb2d;
   font-size: 0.8rem;
 }
