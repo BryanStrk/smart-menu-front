@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { MenuService } from '../../api/menu-service';
 import { AuthService } from '../../api/auth-service';
-import { PedidoStore, ItemCarrito } from '../../state/pedido.store';
+import { PedidoStore } from '../../state/pedido.store';
 
 type ProductoVM = {
   id: string;
@@ -60,10 +60,9 @@ export class Menu implements OnInit {
       const m = q.get('modo');
       this.modo = m === 'ver' ? 'ver' : 'armar';
       this.mesaId = q.get('mesa');
+
       const rec = q.get('recomendados');
       const kcal = q.get('kcal');
-
-      console.log('Que datos recibe menú de backend', rec, kcal);
 
       this.kcalObjetivoIA = kcal ? Number(kcal) : null;
 
@@ -73,14 +72,22 @@ export class Menu implements OnInit {
             .map((id) => id.trim())
             .filter((id) => id.length > 0)
         : [];
-      console.log('IDs IA Sincronizados:', this.idsRecomendados);
-    });
 
-    this.cargarMenuYSincronizar();
+      console.log('Query params menú:', {
+        modo: this.modo,
+        mesa: this.mesaId,
+        recomendados: this.idsRecomendados,
+        kcal: this.kcalObjetivoIA,
+      });
+
+      this.cargarMenuYSincronizar();
+    });
   }
 
   private categoriaDesdeTags(tags: any): string {
-    const t = (Array.isArray(tags) ? tags : []).map((x: any) => String(x).toUpperCase());
+    const t = (Array.isArray(tags) ? tags : []).map((x: any) =>
+      String(x).toUpperCase(),
+    );
 
     if (t.includes('ENTRANTE')) return 'Entrantes';
     if (t.includes('PRINCIPAL')) return 'Principales';
@@ -89,50 +96,58 @@ export class Menu implements OnInit {
     return 'Otros';
   }
 
+  private extraerIdProducto(p: any): string {
+    const rawId =
+      p?.id?.$oid ||
+      p?._id?.$oid ||
+      p?._id?.hexString ||
+      p?.id?.hexString ||
+      (typeof p?.id === 'string' ? p.id : null) ||
+      (typeof p?._id === 'string' ? p._id : null) ||
+      null;
+
+    return rawId ? String(rawId).trim() : '';
+  }
+
   private cargarMenuYSincronizar() {
+    this.loading = true;
+
     this.menuService.getMenu().subscribe({
       next: (resp: any) => {
-        // DEBUG: Vamos a ver qué llega exactamente de la API
-        console.log('API RESPONSE:', resp);
+        console.log('API RESPONSE /producto:', resp);
 
-        const lista = resp.productos || [];
+        const lista = Array.isArray(resp) ? resp : resp?.productos || [];
         const itemsEnCarrito = this.pedidoStore.obtenerItems() || [];
 
-        this.productos = lista.map((p: any) => {
-          // GENERACIÓN DE ID ULTRA-SIMPLE:
-          // Si hay ID lo usamos, si no, el nombre. Siempre a minúsculas y sin espacios.
-          const rawId =
-            p.id?.$oid ||
-            p._id?.$oid ||
-            p._id?.hexString || // "" CLAVE para ObjectId Java
-            p.id?.hexString ||
-            (typeof p.id === 'string' ? p.id : null) ||
-            (typeof p._id === 'string' ? p._id : null) ||
-            null;
-          const idLimpio = rawId ? String(rawId) : '';
-          const idEsValido = /^[a-fA-F0-9]{24}$/.test(idLimpio);
+        this.productos = lista
+      .map((p: any) => {
+        const idLimpio = this.extraerIdProducto(p);
 
-          // Sincronizar cantidad
-          const coincidencia = itemsEnCarrito.find(
-            (i) => String(i.productoId).toLowerCase() === idLimpio && !i.enviado,
-          );
+        const coincidencia = itemsEnCarrito.find(
+          (i) =>
+            String(i.productoId).toLowerCase() === idLimpio.toLowerCase() &&
+            !i.enviado,
+        );
 
-          return {
-            id: idLimpio,
-            nombre: p.nombre || 'Sin nombre',
-            descripcion: p.descripcion || '',
-            precioConIva: Number(p.precioConIva ?? p.precio ?? 0),
-            imagen: p.imagen,
-            categoria: this.categoriaDesdeTags(p.tags),
-            kcal: p.kcal || 0,
-            qty: coincidencia ? Number(coincidencia.cantidad) : 0,
-            proteinas: p.proteinas || 0,
-            grasas: p.grasas || 0,
-            carbohidratos: p.carbohidratos || 0,
-          };
-        });
+        return {
+          id: idLimpio,
+          nombre: p.nombre || 'Sin nombre',
+          descripcion: p.descripcion || '',
+          precioConIva: Number(p.precioConIva ?? p.precio ?? 0),
+          imagen: p.imagen,
+          categoria: p.categoria || this.categoriaDesdeTags(p.tags),
+          kcal: Number(p.kcal ?? 0),
+          qty: coincidencia ? Number(coincidencia.cantidad) : 0,
+          proteinas: Number(p.proteinas ?? 0),
+          grasas: Number(p.grasas ?? 0),
+          carbohidratos: Number(p.carbohidratos ?? 0),
+        } as ProductoVM;
+      })
+      .filter((p: ProductoVM) => p.id.length > 0);
 
         console.log('PRODUCTOS PROCESADOS:', this.productos);
+        console.log('IDs IA sincronizados contra menú:', this.idsRecomendados);
+
         this.loading = false;
       },
       error: (err) => {
@@ -146,7 +161,6 @@ export class Menu implements OnInit {
     const itemsExistentes = this.pedidoStore.obtenerItems();
     const enviados = itemsExistentes.filter((i) => i.enviado);
 
-    // IMPORTANTE: Solo guardamos lo que realmente tiene cantidad > 0
     const nuevos = this.productos
       .filter((p) => p.qty > 0)
       .map((p) => ({
@@ -155,7 +169,9 @@ export class Menu implements OnInit {
         precioActual: p.precioConIva,
         cantidad: p.qty,
         enviado: false,
-        nota: itemsExistentes.find((i) => i.productoId === p.id && !i.enviado)?.nota || '',
+        nota:
+          itemsExistentes.find((i) => i.productoId === p.id && !i.enviado)
+            ?.nota || '',
       }));
 
     this.pedidoStore.guardarItems([...enviados, ...nuevos]);
@@ -175,24 +191,20 @@ export class Menu implements OnInit {
     }
   }
 
-  // --- MÉTODOS DE APOYO ---
-
   productosFiltrados(): ProductoVM[] {
     const term = this.search.trim().toLowerCase();
 
     return this.productos.filter((p) => {
-      // 1. Lógica de IA: Si hay recomendados, el producto debe estar en la lista
-      let cumpleIA = true;
-      if (this.idsRecomendados.length > 0) {
-        // Buscamos coincidencia por ID O por el nombre normalizado (como plan B)
-        const nombreNormalizado = p.nombre.trim().toLowerCase().replace(/\s+/g, '');
-        cumpleIA =
-          this.idsRecomendados.includes(p.id) || this.idsRecomendados.includes(nombreNormalizado);
-      }
+      const cumpleIA =
+        this.idsRecomendados.length === 0 ||
+        this.idsRecomendados.includes(p.id);
 
-      // 2. Filtros normales (Categoría y Buscador)
-      const okCat = !this.catActiva || p.categoria?.toLowerCase() === this.catActiva.toLowerCase();
-      const okSearch = !term || (p.nombre + ' ' + p.descripcion).toLowerCase().includes(term);
+      const okCat =
+        !this.catActiva ||
+        p.categoria?.toLowerCase() === this.catActiva.toLowerCase();
+
+      const okSearch =
+        !term || `${p.nombre} ${p.descripcion}`.toLowerCase().includes(term);
 
       return cumpleIA && okCat && okSearch;
     });
@@ -212,7 +224,10 @@ export class Menu implements OnInit {
 
   limpiarFiltroIA() {
     this.idsRecomendados = [];
-    this.router.navigate([], { queryParams: { recomendados: null }, queryParamsHandling: 'merge' });
+    this.router.navigate([], {
+      queryParams: { recomendados: null, kcal: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   logout() {

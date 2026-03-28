@@ -25,8 +25,22 @@ export interface RecommendationRequest {
   incluirBebida: boolean;
 }
 
+export interface ProductoRecomendado {
+  id?: string;
+  nombre: string;
+  descripcion?: string;
+  precio?: number;
+  precioConIva?: number;
+  imagen?: string;
+  categoria?: string;
+  kcal?: number;
+  proteinas?: number;
+  grasas?: number;
+  carbohidratos?: number;
+}
+
 export interface MenuSuggestion {
-  productos: any[];
+  productos: ProductoRecomendado[];
   kcalTotal: number;
   proteTotal: number;
 }
