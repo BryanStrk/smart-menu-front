@@ -1,29 +1,25 @@
+```html
 <div class="menu-container">
   <div class="top-actions">
     @if (auth.getRole() === 'EMPLEADO' || auth.getRole() === 'EMPRESA') {
-      <button class="btn-logout" type="button" (click)="logout()">Logout</button>
+      <button class="btn-logout" (click)="logout()">Logout</button>
     }
   </div>
 
   @if (idsRecomendados.length > 0) {
     <div class="ia-banner">
-      <div class="ia-banner__content">
-        <p class="mb-0">
-          <strong>Menú personalizado listo.</strong>
-          Estos platos encajan con tus objetivos.
-          @if (kcalObjetivoIA) {
-            Tu objetivo hoy es de <strong>{{ kcalObjetivoIA }} kcal</strong>.
-          } @else {
-            Estos platos encajan con tus objetivos nutricionales.
-          }
-        </p>
-      </div>
+      <p>
+        <strong>Menú personalizado listo.</strong> Estos platos encajan con tus objetivos.
+        @if (kcalObjetivoIA) {
+          Tu objetivo hoy es de <strong>{{ kcalObjetivoIA }} kcal</strong>
+        } @else {
+          Estos platos encajan con tus objetivos nutricionales.
+        }
+      </p>
 
-      <div class="ia-banner__actions">
-        <button type="button" class="btn-ver-todo" (click)="limpiarFiltroIA()">
-          Ver toda la carta
-        </button>
-      </div>
+      <button type="button" class="btn-ver-todo" (click)="limpiarFiltroIA()">
+        Ver toda la carta
+      </button>
     </div>
   }
 
@@ -34,9 +30,9 @@
 
         @if (modo === 'armar') {
           <div class="order-mini">
-            <span>{{ totalItems }} artículos</span>
+            <span>{{ totalItems() }} artículos</span>
             <span class="dot">•</span>
-            <span>{{ totalEuros | number: '1.2-2' }} €</span>
+            <span>{{ totalEuros() | number: '1.2-2' }} €</span>
           </div>
         }
       </div>
@@ -46,7 +42,8 @@
           class="search-input"
           type="text"
           placeholder="Buscar..."
-          [(ngModel)]="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
         />
       </div>
 
@@ -54,7 +51,7 @@
         <button
           type="button"
           class="chip"
-          [class.active]="catActiva === null"
+          [class.active]="catActiva() === null"
           (click)="setCat(null)"
         >
           Todo
@@ -64,7 +61,7 @@
           <button
             type="button"
             class="chip"
-            [class.active]="catActiva === c"
+            [class.active]="catActiva() === c"
             (click)="setCat(c)"
           >
             {{ c }}
@@ -88,17 +85,9 @@
                   <div class="smart-tag">Recomendado</div>
                 }
 
-                @if (modo === 'armar') {
-                  <div class="controls">
-                    <button type="button" class="qty-btn" (click)="dec(p)">−</button>
-                    <span class="count">{{ p.qty }}</span>
-                    <button type="button" class="qty-btn" (click)="inc(p)">+</button>
-                  </div>
-                }
-
                 <div class="img-wrapper">
                   <img
-                    [src]="p.imagen || 'assets/default-plate.png'"
+                    [src]="p.imagen"
                     [alt]="p.nombre"
                     class="product-img"
                     onerror="this.src='assets/default-plate.png'"
@@ -108,7 +97,6 @@
 
               <div class="meta">
                 <h2 class="name">{{ p.nombre }}</h2>
-
                 <p class="desc">{{ p.descripcion }}</p>
 
                 @if (p.kcal) {
@@ -116,13 +104,35 @@
                 }
 
                 <div class="macros-grid">
-                  <span>Proteína {{ p.proteinas || 0 }} g</span>
-                  <span>Grasas {{ p.grasas || 0 }} g</span>
-                  <span>Carbohidratos {{ p.carbohidratos || 0 }} g</span>
+                  <span title="Proteínas">Proteína {{ p.proteinas }} g</span>
+                  <span title="Grasas">Grasa {{ p.grasas }} g</span>
+                  <span title="Carbohidratos">Carbohidratos {{ p.carbohidratos }} g</span>
                 </div>
 
                 <div class="price">{{ p.precioConIva | number: '1.2-2' }} €</div>
               </div>
+
+              @if (modo === 'armar') {
+                <div class="controls">
+                  <button
+                    type="button"
+                    class="qty-btn"
+                    (click)="dec(p, $event)"
+                  >
+                    −
+                  </button>
+
+                  <span class="count">{{ p.qty }}</span>
+
+                  <button
+                    type="button"
+                    class="qty-btn"
+                    (click)="inc(p, $event)"
+                  >
+                    +
+                  </button>
+                </div>
+              }
             </article>
           } @empty {
             <div class="empty-state">
@@ -134,7 +144,7 @@
       }
     </main>
 
-    @if (modo === 'armar' && !loading && totalItems > 0) {
+    @if (modo === 'armar' && !loading && totalItems() > 0) {
       <footer class="bottom-actions">
         <button type="button" class="confirm-btn" (click)="irAPedir()">
           Confirmar mi pedido
@@ -143,3 +153,4 @@
     }
   </div>
 </div>
+```
