@@ -1,38 +1,24 @@
 <div class="pedido">
   <header class="top">
     <div class="top-row">
-      <div class="title">Confirmar Pedido</div>
+      <div class="title">Confirmar pedido</div>
+
       @if (items.length > 0 || pedidoConfirmado) {
-        <div class="badge-app" style="background: var(--surface-2); color: var(--accent)">
+        <div class="badge-app mesa-badge">
           📍 {{ mesa }}
         </div>
       }
     </div>
+
     @if (pedidoConfirmado) {
-      <div
-        class="status-tracker card-app"
-        style="margin-top: 15px; border: 1px solid var(--accent)"
-      >
-        <div
-          class="status-header"
-          style="display: flex; justify-content: space-between; margin-bottom: 8px"
-        >
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent)">
-            ESTADO: {{ textoEstadoBonito(estadoActual) }}
-          </span>
-          <span style="font-size: 0.85rem; color: var(--muted)"
-            >{{ getProgresoPorcentaje() }}%</span
-          >
+      <div class="status-tracker card-app">
+        <div class="status-header">
+          <span class="status-label">Estado: {{ textoEstadoBonito(estadoActual) }}</span>
+          <span class="status-percentage">{{ getProgresoPorcentaje() }}%</span>
         </div>
-        <div
-          class="progress-bar-bg"
-          style="height: 6px; background: var(--surface-2); border-radius: 10px; overflow: hidden"
-        >
-          <div
-            class="progress-fill"
-            [style.width.%]="getProgresoPorcentaje()"
-            style="height: 100%; background: var(--accent); transition: width 0.8s ease"
-          ></div>
+
+        <div class="progress-container">
+          <div class="progress-fill" [style.width.%]="getProgresoPorcentaje()"></div>
         </div>
       </div>
     }
@@ -40,39 +26,40 @@
 
   <main class="lista-pedido">
     @if (tieneItemsEnviados()) {
-      <div class="separador-comanda" style="color: #2ecc71">EN COCINA (Confirmado)</div>
+      <div class="separador-comanda separador-ok">En cocina (confirmado)</div>
+
       @for (item of itemsEnviados(); track identificadorItem($index, item)) {
-        <div class="linea card-app enviado" style="opacity: 0.7; border-left: 4px solid #2ecc71">
+        <div class="linea card-app enviado">
           <div class="linea-info-principal">
-            <div class="nombre">{{ item.nombreActual }} (x{{ item.cantidad }})</div>
-            <div class="subtotal">{{ item.cantidad * item.precioActual | number: '1.2-2' }}€</div>
+            <div class="nombre">{{ item.nombreActual }} <span class="cantidad-inline">(x{{ item.cantidad }})</span></div>
+            <div class="subtotal">{{ item.cantidad * item.precioActual | number: '1.2-2' }} €</div>
           </div>
+
           @if (item.nota) {
-            <div class="nota-fija" style="font-size: 0.8rem; color: gray italic">
-              "{{ item.nota }}"
-            </div>
+            <div class="nota-fija">"{{ item.nota }}"</div>
           }
         </div>
       }
     }
 
     @if (tieneItemsNuevos()) {
-      <div class="separador-comanda" style="color: var(--accent); margin-top: 20px">
-        A PEDIR (Nueva Ronda)
-      </div>
+      <div class="separador-comanda separador-pendiente">A pedir (nueva ronda)</div>
+
       @for (item of itemsNuevos(); track identificadorItem($index, item)) {
-        <div class="linea card-app" style="border-left: 4px solid var(--accent)">
+        <div class="linea card-app pendiente">
           <div class="linea-info-principal">
             <div class="nombre">{{ item.nombreActual }}</div>
-            <div class="subtotal">{{ item.cantidad * item.precioActual | number: '1.2-2' }}€</div>
+            <div class="subtotal">{{ item.cantidad * item.precioActual | number: '1.2-2' }} €</div>
           </div>
 
           <div class="linea-controles">
-            <button class="btn-cantidad" (click)="cambiarCantidad(item, -1)" [disabled]="enviando">
+            <button class="btn-cantidad" type="button" (click)="cambiarCantidad(item, -1)" [disabled]="enviando">
               −
             </button>
+
             <span class="cantidad">{{ item.cantidad }}</span>
-            <button class="btn-cantidad" (click)="cambiarCantidad(item, 1)" [disabled]="enviando">
+
+            <button class="btn-cantidad" type="button" (click)="cambiarCantidad(item, 1)" [disabled]="enviando">
               +
             </button>
           </div>
@@ -90,33 +77,48 @@
   </main>
 
   @if (items.length > 0) {
-    <footer class="pie card-app" style="margin-top: auto">
+    <footer class="pie card-app">
       <div class="totales">
-        <span style="color: var(--muted)">Total Pedido:</span>
-        <span class="total-euros" style="color: var(--accent)"
-          >{{ totalEuros | number: '1.2-2' }} €</span
-        >
+        <div class="totales-bloque">
+          <span class="label-total">Nueva ronda:</span>
+          <span class="valor-total">{{ totalNuevaRonda | number: '1.2-2' }} €</span>
+        </div>
+
+        <div class="totales-bloque total-acumulado">
+          <span class="label-total">Total acumulado:</span>
+          <span class="valor-total grande">{{ totalEuros | number: '1.2-2' }} €</span>
+        </div>
       </div>
 
       <div class="acciones">
-        <button class="btn-app danger" (click)="vaciarCarrito()">Vaciar</button>
-        <button class="btn-app secondary" (click)="volverAlMenu()">Añadir más</button>
+        <button class="btn-app danger" type="button" (click)="vaciarCarrito()">
+          Vaciar nueva ronda
+        </button>
+
+        <button class="btn-app secondary" type="button" (click)="volverAlMenu()">
+          Añadir más
+        </button>
+
         <button
           class="btn-app primary"
+          type="button"
           [disabled]="enviando || !tieneItemsNuevos()"
           (click)="confirmarPedido()"
         >
-          {{ enviando ? 'Enviando...' : 'Confirmar Nueva Ronda' }}
+          {{ enviando ? 'Enviando...' : 'Confirmar nueva ronda' }}
         </button>
       </div>
     </footer>
   } @else if (pedidoConfirmado) {
-    <footer class="pie card-app" style="margin-top: auto; text-align: center; padding: 20px">
-      <p style="color: var(--muted); margin-bottom: 10px">¿Te apetece algo más?</p>
-      <button class="btn-app secondary" (click)="volverAlMenu()">Añadir más productos</button>
+    <footer class="pie card-app pie-simple">
+      <p class="texto-secundario">¿Te apetece algo más?</p>
+      <button class="btn-app secondary" type="button" (click)="volverAlMenu()">
+        Añadir más productos
+      </button>
     </footer>
   }
 </div>
+
 @if (mensajeOk) {
   <div class="feedback-overlay success">
     <div class="feedback-content">
@@ -129,6 +131,6 @@
 @if (mensajeError) {
   <div class="alert-error">
     <span>{{ mensajeError }}</span>
-    <button (click)="mensajeError = ''">✕</button>
+    <button type="button" (click)="mensajeError = ''">✕</button>
   </div>
 }

@@ -6,10 +6,6 @@ import { PedidoStore, ItemCarrito } from '../../state/pedido.store';
 import { PedidoService, NuevoPedido } from '../../api/pedido-service';
 import { interval, Subscription } from 'rxjs';
 
-/**
- * Componente que gestiona la revisión del carrito y el proceso de envío a cocina.
- * Maneja el ciclo de vida del pedido, desde la edición de cantidades hasta el seguimiento del estado.
- */
 @Component({
   selector: 'app-pedir',
   standalone: true,
@@ -18,25 +14,16 @@ import { interval, Subscription } from 'rxjs';
   styleUrls: ['./pedir.css'],
 })
 export class Pedir implements OnInit, OnDestroy {
-  /** Lista de productos seleccionados. */
   items: ItemCarrito[] = [];
-  /** Importe total de la compra. */
   totalEuros = 0;
-  /** Comentario general para el personal de cocina. */
+  totalNuevaRonda = 0;
   nota = '';
-  /** Número o identificador de la mesa. */
   mesa = '';
-  /** Indica si hay un proceso de envío en curso. */
   enviando = false;
-  /** Mensaje informativo de error. */
   mensajeError = '';
-  /** Mensaje informativo de éxito. */
   mensajeOk = '';
-  /** Controla si se debe mostrar la vista de seguimiento del pedido. */
   pedidoConfirmado = false;
-  /** Estado actual de la comanda en el flujo de trabajo. */
   estadoActual = 'RECIBIDO';
-  /** Suscripción para la comprobación periódica de cambios de estado. */
   private vigilanciaSub?: Subscription;
 
   constructor(
@@ -45,13 +32,10 @@ export class Pedir implements OnInit, OnDestroy {
     private router: Router,
   ) {}
 
-  /**
-   * Carga los datos iniciales y recupera el estado de seguimiento si existe un pedido previo.
-   */
   ngOnInit(): void {
     this.items = this.pedidoStore.obtenerItems();
     this.mesa = this.pedidoStore.obtenerMesa() || 'Mesa 1';
-    this.recalcularTotal();
+    this.recalcularTotales();
 
     const estadoGuardado = localStorage.getItem('ultimo_estado_pedido');
 
@@ -70,19 +54,21 @@ export class Pedir implements OnInit, OnDestroy {
     }
   }
 
-  /** Actualiza el total económico basándose en los productos actuales. */
-  private recalcularTotal() {
-    this.totalEuros = this.items.reduce((s, i) => s + (i.cantidad || 0) * (i.precioActual || 0), 0);
+  private recalcularTotales() {
+    this.totalEuros = this.items.reduce(
+      (s, i) => s + (i.cantidad || 0) * (i.precioActual || 0),
+      0,
+    );
+
+    this.totalNuevaRonda = this.items
+      .filter((i) => !i.enviado)
+      .reduce((s, i) => s + (i.cantidad || 0) * (i.precioActual || 0), 0);
   }
 
-  /** Navega al menú para añadir más productos. */
   seguirPidiendo() {
     this.router.navigate(['/menu'], { queryParams: { modo: 'armar' } });
   }
 
-  /**
-   * Inicia un temporizador que consulta cambios de estado en el almacenamiento local.
-   */
   iniciarVigilanciaEstado() {
     this.vigilanciaSub = interval(2000).subscribe(() => {
       const estadoEnStorage = localStorage.getItem('ultimo_estado_pedido');
@@ -100,57 +86,41 @@ export class Pedir implements OnInit, OnDestroy {
     });
   }
 
-  /** Limpia las suscripciones al destruir el componente. */
   ngOnDestroy() {
     this.vigilanciaSub?.unsubscribe();
   }
 
-  /**
-   * Modifica la cantidad de un producto. Si llega a cero, lo elimina.
-   * @param item Producto a modificar.
-   * @param delta Cantidad a sumar o restar.
-   */
   cambiarCantidad(item: ItemCarrito, delta: number) {
     if (item.enviado) return;
 
     const nuevaCantidad = (item.cantidad || 0) + delta;
+
     if (nuevaCantidad <= 0) {
       this.items = this.items.filter((i) => i !== item);
     } else {
       item.cantidad = nuevaCantidad;
     }
+
     this.pedidoStore.guardarItems(this.items);
-    this.recalcularTotal();
+    this.recalcularTotales();
   }
 
-  /**
-   * Asocia una observación específica a un producto del carrito.
-   * @param item Producto seleccionado.
-   * @param nota Texto de la observación.
-   */
   cambiarNota(item: ItemCarrito, nota: string) {
     if (item.enviado) return;
     item.nota = nota;
     this.pedidoStore.guardarItems(this.items);
   }
 
-  /** Elimina todos los productos que aún no han sido enviados a cocina. */
   vaciarCarrito() {
     this.items = this.items.filter((i) => i.enviado === true);
     this.pedidoStore.guardarItems(this.items);
-    this.recalcularTotal();
+    this.recalcularTotales();
   }
 
-  /** Regresa a la vista del catálogo. */
   volverAlMenu() {
     this.router.navigate(['/menu'], { queryParams: { modo: 'armar' } });
   }
-  private esObjectId(val: any): boolean {
-    return typeof val === 'string' && /^[a-fA-F0-9]{24}$/.test(val);
-  }
-  /**
-   * Empaqueta los productos nuevos y los envía como una ronda independiente a cocina.
-   */
+
   confirmarPedido() {
     this.mensajeError = '';
     this.mensajeOk = '';
@@ -182,11 +152,16 @@ export class Pedir implements OnInit, OnDestroy {
 
     const finalizarEnvioLocal = () => {
       this.pedidoStore.agregarAlHistorial({ ...cuerpo, id: idComanda });
+
       this.items.forEach((item) => {
         if (!item.enviado) item.enviado = true;
       });
+
       this.pedidoStore.guardarItems(this.items);
+      this.recalcularTotales();
+
       this.mensajeOk = '¡Ronda enviada con éxito!';
+
       setTimeout(() => {
         this.mensajeOk = '';
         this.pedidoConfirmado = true;
@@ -206,7 +181,6 @@ export class Pedir implements OnInit, OnDestroy {
     });
   }
 
-  /** Devuelve el porcentaje numérico de progreso según el estado actual. */
   getProgresoPorcentaje(): number {
     const mapa: Record<string, number> = {
       RECIBIDO: 20,
@@ -218,7 +192,6 @@ export class Pedir implements OnInit, OnDestroy {
     return mapa[this.estadoActual] || 0;
   }
 
-  /** Traduce el estado técnico a un mensaje amigable para el cliente. */
   textoEstadoBonito(estado: string): string {
     const nombres: Record<string, string> = {
       RECIBIDO: 'Recibido en cocina',
@@ -230,34 +203,28 @@ export class Pedir implements OnInit, OnDestroy {
     return nombres[estado] || estado;
   }
 
-  /** Resetea el flujo de seguimiento del pedido. */
   finalizarCicloPedido() {
     localStorage.removeItem('ultimo_estado_pedido');
     this.pedidoConfirmado = false;
     this.estadoActual = 'RECIBIDO';
   }
 
-  /** Filtra los productos que ya están confirmados por cocina. */
   itemsEnviados() {
     return this.items.filter((i) => i.enviado === true);
   }
 
-  /** Filtra los productos pendientes de envío. */
   itemsNuevos() {
     return this.items.filter((i) => !i.enviado);
   }
 
-  /** Comprueba si hay productos ya enviados en el historial. */
   tieneItemsEnviados() {
     return this.itemsEnviados().length > 0;
   }
 
-  /** Comprueba si hay productos en el carrito esperando ser enviados. */
   tieneItemsNuevos() {
     return this.itemsNuevos().length > 0;
   }
 
-  /** Función de ayuda para la optimización de listas en la vista. */
   identificadorItem(index: number, item: ItemCarrito) {
     return `${item.productoId}-${item.enviado}-${index}`;
   }
