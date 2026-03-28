@@ -54,24 +54,30 @@ export class Pedir implements OnInit, OnDestroy {
     }
   }
 
-  private recalcularTotales() {
+  private recalcularTotales(): void {
     this.totalEuros = this.items.reduce(
-      (s, i) => s + (i.cantidad || 0) * (i.precioActual || 0),
+      (s, i) => s + (Number(i.cantidad || 0) * Number(i.precioActual || 0)),
       0,
     );
 
     this.totalNuevaRonda = this.items
       .filter((i) => !i.enviado)
-      .reduce((s, i) => s + (i.cantidad || 0) * (i.precioActual || 0), 0);
+      .reduce(
+        (s, i) => s + (Number(i.cantidad || 0) * Number(i.precioActual || 0)),
+        0,
+      );
   }
 
-  seguirPidiendo() {
+  seguirPidiendo(): void {
     this.router.navigate(['/menu'], { queryParams: { modo: 'armar' } });
   }
 
-  iniciarVigilanciaEstado() {
+  iniciarVigilanciaEstado(): void {
+    this.vigilanciaSub?.unsubscribe();
+
     this.vigilanciaSub = interval(2000).subscribe(() => {
       const estadoEnStorage = localStorage.getItem('ultimo_estado_pedido');
+
       if (estadoEnStorage && estadoEnStorage !== this.estadoActual) {
         this.estadoActual = estadoEnStorage;
 
@@ -86,42 +92,71 @@ export class Pedir implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.vigilanciaSub?.unsubscribe();
   }
 
-  cambiarCantidad(item: ItemCarrito, delta: number) {
+  cambiarCantidad(item: ItemCarrito, delta: number): void {
     if (item.enviado) return;
 
-    const nuevaCantidad = (item.cantidad || 0) + delta;
+    const index = this.items.findIndex(
+      (i) =>
+        i.productoId === item.productoId &&
+        i.enviado === item.enviado &&
+        i.nombreActual === item.nombreActual,
+    );
+
+    if (index === -1) return;
+
+    const cantidadActual = Number(this.items[index].cantidad ?? 0);
+    const nuevaCantidad = cantidadActual + delta;
 
     if (nuevaCantidad <= 0) {
-      this.items = this.items.filter((i) => i !== item);
+      this.items.splice(index, 1);
     } else {
-      item.cantidad = nuevaCantidad;
+      this.items[index] = {
+        ...this.items[index],
+        cantidad: nuevaCantidad,
+      };
     }
 
+    this.items = [...this.items];
     this.pedidoStore.guardarItems(this.items);
     this.recalcularTotales();
   }
 
-  cambiarNota(item: ItemCarrito, nota: string) {
+  cambiarNota(item: ItemCarrito, nota: string): void {
     if (item.enviado) return;
-    item.nota = nota;
+
+    const index = this.items.findIndex(
+      (i) =>
+        i.productoId === item.productoId &&
+        i.enviado === item.enviado &&
+        i.nombreActual === item.nombreActual,
+    );
+
+    if (index === -1) return;
+
+    this.items[index] = {
+      ...this.items[index],
+      nota,
+    };
+
+    this.items = [...this.items];
     this.pedidoStore.guardarItems(this.items);
   }
 
-  vaciarCarrito() {
+  vaciarCarrito(): void {
     this.items = this.items.filter((i) => i.enviado === true);
     this.pedidoStore.guardarItems(this.items);
     this.recalcularTotales();
   }
 
-  volverAlMenu() {
+  volverAlMenu(): void {
     this.router.navigate(['/menu'], { queryParams: { modo: 'armar' } });
   }
 
-  confirmarPedido() {
+  confirmarPedido(): void {
     this.mensajeError = '';
     this.mensajeOk = '';
 
@@ -146,16 +181,21 @@ export class Pedir implements OnInit, OnDestroy {
         cantidad: i.cantidad,
         nota: i.nota || '',
       })),
-      totalPedido: productosNuevos.reduce((s, i) => s + i.cantidad * i.precioActual, 0),
+      totalPedido: productosNuevos.reduce(
+        (s, i) => s + (Number(i.cantidad) * Number(i.precioActual)),
+        0,
+      ),
       fechaCreacion: new Date().toISOString(),
     };
 
     const finalizarEnvioLocal = () => {
       this.pedidoStore.agregarAlHistorial({ ...cuerpo, id: idComanda });
 
-      this.items.forEach((item) => {
-        if (!item.enviado) item.enviado = true;
-      });
+      this.items = this.items.map((item) =>
+        !item.enviado
+          ? { ...item, enviado: true }
+          : item
+      );
 
       this.pedidoStore.guardarItems(this.items);
       this.recalcularTotales();
@@ -203,29 +243,29 @@ export class Pedir implements OnInit, OnDestroy {
     return nombres[estado] || estado;
   }
 
-  finalizarCicloPedido() {
+  finalizarCicloPedido(): void {
     localStorage.removeItem('ultimo_estado_pedido');
     this.pedidoConfirmado = false;
     this.estadoActual = 'RECIBIDO';
   }
 
-  itemsEnviados() {
+  itemsEnviados(): ItemCarrito[] {
     return this.items.filter((i) => i.enviado === true);
   }
 
-  itemsNuevos() {
+  itemsNuevos(): ItemCarrito[] {
     return this.items.filter((i) => !i.enviado);
   }
 
-  tieneItemsEnviados() {
+  tieneItemsEnviados(): boolean {
     return this.itemsEnviados().length > 0;
   }
 
-  tieneItemsNuevos() {
+  tieneItemsNuevos(): boolean {
     return this.itemsNuevos().length > 0;
   }
 
-  identificadorItem(index: number, item: ItemCarrito) {
+  identificadorItem(index: number, item: ItemCarrito): string {
     return `${item.productoId}-${item.enviado}-${index}`;
   }
 }
