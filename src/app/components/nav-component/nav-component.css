@@ -22,14 +22,24 @@
   text-decoration: none;
   color: var(--muted);
   font-size: 0.75rem;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .nav-item.active {
   color: var(--accent);
 }
 
+.nav-item:hover {
+  color: var(--accent);
+  transform: translateY(-3px);
+}
+
 .icon {
   font-size: 1.5rem;
   margin-bottom: 4px;
+  transition: transform 0.2s ease;
+}
+
+.nav-item:hover .icon {
+  transform: scale(1.2);
 }

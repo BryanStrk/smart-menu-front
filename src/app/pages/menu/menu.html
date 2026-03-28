@@ -1,4 +1,4 @@
-```html
+
 <div class="menu-container">
   <div class="top-actions">
     @if (auth.getRole() === 'EMPLEADO' || auth.getRole() === 'EMPRESA') {
@@ -78,7 +78,7 @@
         </div>
       } @else {
         <div class="grid">
-          @for (p of productosFiltrados(); track p.id) {
+          @for (p of productosFiltrados(); track p.id + p.qty) {
             <article class="card">
               <div class="card-img-box">
                 @if (idsRecomendados.includes(p.id)) {
@@ -153,4 +153,3 @@
     }
   </div>
 </div>
-```
