@@ -1,209 +1,283 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
 .barra-page {
-  height: 100%; 
+  height: 100dvh;
   width: 100%;
   box-sizing: border-box;
-  padding: 16px 20px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   background: var(--bg);
   color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
 }
 
 /* HEADER */
 .barra-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 .barra-header .titulo {
-  font-size: 1.6rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem;
   font-weight: 700;
-  color: var(--accent);
-}
-
-/* CONTENEDOR DE COLUMNAS */
-.barra-columnas {
-  display: flex;
-  flex: 1;
-  gap: 20px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
-
-.kanban-col {
-  flex: 1;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: var(--radius);
-  padding: 12px;
-  border: 1px solid var(--border);
-}
-
-.col-header {
-  font-size: 0.9rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  text-align: center;
-  padding: 8px;
-  border-radius: var(--radius);
-  background: var(--surface-2);
   color: var(--accent);
   margin: 0;
 }
 
-/* LISTA DE TARJETAS */
+.status-sync {
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 999px;
+  padding: 3px 10px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* COLUMNAS KANBAN */
+.barra-columnas {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+}
+
+.barra-columnas::-webkit-scrollbar {
+  height: 4px;
+}
+.barra-columnas::-webkit-scrollbar-track {
+  background: transparent;
+}
+.barra-columnas::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
+
+.kanban-col {
+  flex: 1;
+  min-width: 280px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.col-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  text-align: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--accent);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* LISTA */
 .lista-pedidos {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.06) transparent;
 }
 
-.tarjeta-pedido {
-  background: var(--surface);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  padding: 16px;
+/* GRUPO DE MESA */
+.mesa-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: var(--shadow);
-  transition: var(--transition);
+  gap: 8px;
 }
 
-.tarjeta-header {
+.mesa-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  padding: 2px 0;
+  display: block;
+}
+
+/* TARJETA */
+.tarjeta-pedido {
+  background: linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tarjeta-pedido:hover {
+  border-color: rgba(196, 142, 60, 0.2);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+/* CABECERA TICKET */
+.ticket-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
 }
 
-.mesa {
-  font-size: 1.2rem;
+.ticket-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket-codigo {
+  font-size: 1.1rem;
   font-weight: 800;
+  letter-spacing: 0.5px;
   color: var(--text);
 }
 
-.fecha {
-  font-size: 0.75rem;
+.ticket-mesa {
+  font-size: 0.78rem;
   color: var(--muted);
+  font-weight: 600;
+}
+
+.ticket-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket-hora {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ticket-total {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--accent);
 }
 
 /* ITEMS */
-.item-linea {
-  font-size: 0.95rem;
-  margin-bottom: 4px;
+.tarjeta-items {
+  padding: 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.item-linea b {
+.item-linea {
+  font-size: 0.88rem;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--text);
+}
+
+.item-cantidad {
   color: var(--accent);
+  font-weight: 800;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.item-nombre {
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .nota-item {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--accent);
   font-style: italic;
-  margin-top: 4px;
-  padding-left: 10px;
-  border-left: 2px solid var(--accent);
+  padding: 3px 8px;
+  border-left: 2px solid rgba(196, 142, 60, 0.4);
+  margin-top: 2px;
+  margin-left: 22px;
 }
 
-/* BOTONES DE ACCIONES */
+/* BOTONES */
 .acciones-grid {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid rgba(255,255,255,0.04);
 }
 
 .btn-accion {
   flex: 1;
-  border: none;
-  padding: 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border: 1px solid rgba(196, 142, 60, 0.2);
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  background: var(--surface-2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  transition: var(--transition);
+  background: rgba(196, 142, 60, 0.08);
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
 }
 
 .btn-accion:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(214, 177, 94, 0.1);
+  background: rgba(196, 142, 60, 0.18);
+  border-color: rgba(196, 142, 60, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-cancelar {
-  flex: 0 0 40px;
-  background: rgba(255, 90, 95, 0.1);
-  color: var(--danger);
+  flex: 0 0 36px;
+  background: rgba(255, 90, 95, 0.08);
+  color: #ff9090;
   border-color: rgba(255, 90, 95, 0.2);
+  font-size: 0.9rem;
 }
 
 .btn-cancelar:hover {
-  background: var(--danger);
-  color: white;
+  background: rgba(255, 90, 95, 0.18);
+  border-color: rgba(255, 90, 95, 0.4);
+  transform: translateY(-1px);
 }
 
+/* VACÍO */
 .vacio-msg {
   text-align: center;
-  font-size: 0.85rem;
-  color: var(--muted);
-  padding: 20px;
-}
-
-/* ===== HEADER DEL TICKET (codigo + mesa + hora + total) ===== */
-.ticket-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 8px;
-}
-
-.ticket-left{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-}
-
-.ticket-codigo{
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: 0.6px;
-  color: var(--text);
-}
-
-.ticket-mesa{
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.ticket-right{
-  text-align:right;
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-}
-
-.ticket-hora{
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--text);
-}
-
-.ticket-total{
-  font-size: 0.9rem;
-  font-weight: 900;
-  color: var(--accent);
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.2);
+  padding: 24px 12px;
+  border: 1px dashed rgba(255,255,255,0.06);
+  border-radius: 12px;
+  margin-top: 4px;
 }

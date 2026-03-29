@@ -100,7 +100,7 @@ export class Barra implements OnInit {
           mesaId: p.mesaId ?? '',
         }));
 
-        console.log('[BARRA] vm[0]', this.pedidos?.[0]);
+        console.log('[BARRA] id RAW JSON:', JSON.stringify(resp?.[0]?.id ?? resp?.[0]?._id));
 
         this.cargando = false;
       },
