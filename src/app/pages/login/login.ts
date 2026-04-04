@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../api/auth-service';
+import { environment } from '../../../environment/environment'; 
+
 
 /** Componente de control de acceso.
  * Gestiona la captura de las credenciales del usuario
@@ -39,10 +41,14 @@ export class Login {
     this.error = null;
     this.loading = true;
 
-    const credentials = {
-      email: this.email.trim(),
-      password: this.password,
-    };
+    try {
+      // Guardamos credenciales (interceptor las meterá como Basic)
+      this.auth.setCredentials(this.email.trim(), this.password);
+
+      // “Ping” para validar credenciales (elige un endpoint protegido)
+      // /categoria o /producto si ya lo tienes protegido
+await this.http.get(`${environment.apiUrl}/producto`).toPromise();
+
 
     /**
      * Inicia la suscripción al flujo de autenticación.

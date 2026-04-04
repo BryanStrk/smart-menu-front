@@ -6,10 +6,9 @@ export const endpoints = {
   auth: {
     login: '/auth/login',
     me: '/auth/me',
-  },
-  /** Catálogo de productos (Carta) */
+  },    
   productos: {
-    list: '/producto',
+    list: '/producto',   // este es tu "menú"
     one: (id: string) => `/producto/${id}`,
   },
   /** Flujo del Cliente y Gestión de Barra */
